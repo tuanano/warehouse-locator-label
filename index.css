@@ -1,0 +1,12 @@
+/* Basic site styles so index.css exists for Pages (prevents 404)
+   Keep this minimal — full Tailwind/PostCSS setup is recommended for production */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f3f4f6;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
