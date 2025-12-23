@@ -17,6 +17,5 @@ export interface LabelItem {
 
 export enum GeneratorType {
   MANUAL = 'MANUAL',
-  SERIES = 'SERIES',
-  AI = 'AI'
+  SERIES = 'SERIES'
 }
