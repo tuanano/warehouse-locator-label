@@ -39,6 +39,19 @@ const App: React.FC = () => {
     return chunks;
   }, [sortedLabels]);
 
+  // Pagination for Printing
+  // Since a strip of 6 labels (40mm each) is ~240mm tall, and A4 is 297mm tall,
+  // we can only fit ONE row of strips vertically per page.
+  // Therefore, items per page = number of columns.
+  const pages = useMemo(() => {
+    const stripsPerPage = config.columns; 
+    const chunks = [];
+    for (let i = 0; i < labelStrips.length; i += stripsPerPage) {
+      chunks.push(labelStrips.slice(i, i + stripsPerPage));
+    }
+    return chunks;
+  }, [labelStrips, config.columns]);
+
   const addLabels = (codes: string[]) => {
     const newLabels = codes.map(code => ({
       id: uuidv4(),
@@ -60,7 +73,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col h-screen overflow-hidden">
+    <div className="min-h-screen flex flex-col h-screen overflow-hidden print:h-auto print:overflow-visible print:block">
       {/* Navbar (No Print) */}
       <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 flex-shrink-0 no-print z-10 relative">
         <div className="flex items-center gap-3">
@@ -84,7 +97,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative print:overflow-visible print:block print:h-auto">
         {/* Left Sidebar (No Print) */}
         <div className="w-96 p-4 h-full overflow-hidden no-print flex-shrink-0 bg-gray-50">
           <InputPanel 
@@ -110,7 +123,7 @@ const App: React.FC = () => {
              <div className="max-w-5xl mx-auto">
                <div className="mb-4 flex items-center justify-between">
                  <div className="flex items-center gap-4">
-                   <h2 className="text-gray-700 font-semibold">Xem trước ({labelStrips.length} dây tem)</h2>
+                   <h2 className="text-gray-700 font-semibold">Xem trước ({labelStrips.length} dây tem - {pages.length} trang in)</h2>
                    
                    {/* Sort Toggle Button */}
                    <button 
@@ -168,37 +181,45 @@ const App: React.FC = () => {
 
         {/* ACTUAL PRINT LAYOUT (Hidden on screen, Visible on Print) */}
         <div className="print-only print-container">
-          <div 
-             style={{
+          {pages.map((pageStrips, pageIndex) => (
+            <div 
+              key={pageIndex}
+              style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${config.columns}, max-content)`,
                 columnGap: `${config.gap}mm`,
                 rowGap: `${config.gap}mm`,
                 justifyContent: 'start',
-                padding: '0',
-                margin: '0'
-             }}
-          >
-            {labelStrips.map((strip, idx) => (
-              <div 
-                key={idx} 
-                className="flex flex-col break-inside-avoid"
-                style={{
-                  border: '1px solid black', // The requested "Bolder" for cutting
-                  padding: '1mm'
-                }}
-              >
-                {strip.map((label) => (
-                  <BarcodeRenderer 
-                    key={label.id} 
-                    value={label.code} 
-                    config={config} 
-                    className="border-b border-gray-300 last:border-b-0" 
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+                paddingTop: '5mm', // Safe top margin
+                paddingLeft: '5mm', // Safe left margin (optional depending on printer)
+                margin: '0',
+                pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto',
+                breakAfter: pageIndex < pages.length - 1 ? 'page' : 'auto',
+                height: '290mm', // Force A4 height logic to trigger new pages if content overflows
+                boxSizing: 'border-box'
+              }}
+            >
+              {pageStrips.map((strip, stripIdx) => (
+                <div 
+                  key={stripIdx} 
+                  className="flex flex-col break-inside-avoid"
+                  style={{
+                    border: '1px solid black',
+                    padding: '1mm'
+                  }}
+                >
+                  {strip.map((label) => (
+                    <BarcodeRenderer 
+                      key={label.id} 
+                      value={label.code} 
+                      config={config} 
+                      className="border-b border-gray-300 last:border-b-0" 
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>
